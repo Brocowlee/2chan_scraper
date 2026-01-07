@@ -20,4 +20,4 @@ RUN poetry config virtualenvs.create false \
 # Copying our application code
 COPY . /app
 
-CMD ["python", "app/main.py"]
+CMD ["python", "-m", "app.main"]
