@@ -49,7 +49,12 @@ def download_image(url: str, post_number: int) -> str:
         # 2chan images might need headers or referrer sometimes, but usually open
         # The image URL is often relative or absolute
         if not url.startswith('http'):
-            url = f"https://nov.2chan.net/35/{url}"
+            # If it starts with /, it's relative to domain root
+            if url.startswith('/'):
+                 url = f"https://nov.2chan.net{url}"
+            else:
+                 # Otherwise assume relative to current board (less likely for src/ but possible for others)
+                 url = f"https://nov.2chan.net/35/{url}"
 
         r = requests.get(url, stream=True, timeout=10)
         if r.status_code == 200:
@@ -119,13 +124,39 @@ def parse_and_save(html: str):
             # Helper to extract post data
             def extract_post_data(element, is_op=False):
                 post_data = {}
+                post_number = None
+
+                # 1. Try data-res (OP usually)
+                if is_op and element.get('data-res'):
+                    try:
+                        post_number = int(element.get('data-res'))
+                    except ValueError:
+                        pass
                 
-                # Number
-                # Checkbox value is robust
-                checkbox = element.find('input', {'name': 'del'})
-                if checkbox:
-                    post_data['post_number'] = int(checkbox.get('value'))
+                # 2. Try span.cno (Replies usually)
+                if not post_number:
+                    cno = element.find('span', class_='cno')
+                    if cno:
+                        val = cno.get_text(strip=True)
+                        if val.startswith("No."):
+                            try:
+                                post_number = int(val.replace("No.", ""))
+                            except ValueError:
+                                pass
+                
+                # 3. Try Checkbox (Fallback)
+                if not post_number:
+                    checkbox = element.find('input', {'name': 'del'})
+                    if checkbox:
+                        try:
+                            post_number = int(checkbox.get('value'))
+                        except ValueError:
+                            pass
+
+                if post_number:
+                    post_data['post_number'] = post_number
                 else:
+                    logger.warning(f"Could not extract post number. Element snippet: {str(element)[:300]}...")
                     return None
                     
                 # Name
@@ -143,11 +174,6 @@ def parse_and_save(html: str):
                 blockquote = element.find('blockquote')
                 post_data['content'] = blockquote.get_text('\n', strip=True) if blockquote else ""
                 
-                # Metadata (Date/ID) in .cnw usually
-                # Skipping strict parsing for now, just raw if found ? 
-                # Actually not specified in prompt to parse strictly, just "metadata_raw"
-                # Often it's mixed in text nodes. Let's look for simple approach or skip for now if tricky.
-                
                 # Image
                 # <a href="/35/src/123.jpg" target=_blank>...</a>
                 # Usually look for 'src' in href
@@ -164,11 +190,14 @@ def parse_and_save(html: str):
             op_data = extract_post_data(thre, is_op=True)
             if op_data:
                 save_post(db, thread_obj.id, op_data)
+            else:
+                 logger.warning(f"Could not extract OP data for thread {thread_num}")
 
             # --- PROCESS REPLIES ---
             # Replies are in <table> inside or after. 
             # <table border=0><tr><td class="rtd">...</td></tr></table>
             replies = thre.find_all('td', class_='rtd')
+            
             for reply in replies:
                 reply_data = extract_post_data(reply, is_op=False)
                 if reply_data:
@@ -210,10 +239,22 @@ def save_post(db: Session, thread_id: int, data: dict):
     db.execute(stmt)
 
 
+def scrape_thread(thread_num: int):
+    """Scrape a specific thread."""
+    url = f"{BASE_URL}/res/{thread_num}.htm"
+    # logger.info(f"Scraping thread {url}...") # verbose
+    html = fetch_page(url)
+    if html:
+        parse_and_save(html)
+        time.sleep(2) # Be polite
+
+
 def scrape_cycle():
-    """Main loop for scraping pages 0-10."""
+    """Main loop for scraping pages 0-10, then all found threads."""
     logger.info("Starting scrape cycle for pages 0-10")
     
+    found_thread_numbers = set()
+
     for i in range(11):
         if i == 0:
             url = f"{BASE_URL}/futaba.htm"
@@ -224,9 +265,22 @@ def scrape_cycle():
         html = fetch_page(url)
         
         if html:
+            # We need to extract thread numbers from this page to scrape them fully later
+            soup = BeautifulSoup(html, 'lxml')
+            threads_divs = soup.find_all('div', class_='thre')
+            for thre in threads_divs:
+                t_str = thre.get('data-res')
+                if t_str:
+                    found_thread_numbers.add(int(t_str))
+
             parse_and_save(html)
         
         # Be polite
         time.sleep(2)
-        
+    
+    logger.info(f"Index scrape complete. Found {len(found_thread_numbers)} threads. Starting full thread scrape...")
+    
+    for t_num in found_thread_numbers:
+        scrape_thread(t_num)
+
     logger.info("Scrape cycle completed.")
