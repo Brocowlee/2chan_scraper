@@ -2,6 +2,7 @@ import logging
 import time
 import os
 import requests
+from typing import Tuple
 from bs4 import BeautifulSoup
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -67,7 +68,7 @@ def download_image(url: str, post_number: int) -> str:
         return None
     return None
 
-def parse_and_save(html: str):
+def parse_and_save(html: str) -> Tuple[int, int]:
     """Parse the HTML and save threads/posts."""
     soup = BeautifulSoup(html, 'lxml')
     db: Session = SessionLocal()
@@ -77,6 +78,9 @@ def parse_and_save(html: str):
         threads_divs = soup.find_all('div', class_='thre')
         
         logger.info(f"Found {len(threads_divs)} threads on page.")
+        
+        new_threads_count = 0
+        new_posts_count = 0
 
         for thre in threads_divs:
             # The OP post is directly inside specific tags, but structure varies.
@@ -104,7 +108,9 @@ def parse_and_save(html: str):
             ).on_conflict_do_nothing(
                 index_elements=['thread_number']
             )
-            db.execute(stmt)
+            result = db.execute(stmt)
+            if result.rowcount > 0:
+                 new_threads_count += 1
             db.commit()
 
             # Retrieve the thread ID from DB to link posts
@@ -189,7 +195,8 @@ def parse_and_save(html: str):
             # OP extraction
             op_data = extract_post_data(thre, is_op=True)
             if op_data:
-                save_post(db, thread_obj.id, op_data)
+                if save_post(db, thread_obj.id, op_data):
+                    new_posts_count += 1
             else:
                  logger.warning(f"Could not extract OP data for thread {thread_num}")
 
@@ -201,7 +208,8 @@ def parse_and_save(html: str):
             for reply in replies:
                 reply_data = extract_post_data(reply, is_op=False)
                 if reply_data:
-                    save_post(db, thread_obj.id, reply_data)
+                    if save_post(db, thread_obj.id, reply_data):
+                        new_posts_count += 1
                     
             db.commit()
             
@@ -210,10 +218,15 @@ def parse_and_save(html: str):
         db.rollback()
     finally:
         db.close()
+    return new_threads_count, new_posts_count
 
 from datetime import datetime
 
-def save_post(db: Session, thread_id: int, data: dict):
+def save_post(db: Session, thread_id: int, data: dict) -> bool:
+    # Check if post exists first to determine "newness" accurately
+    existing = db.query(models.Post).filter_by(post_number=data['post_number']).first()
+    is_new = existing is None
+
     # Download image if exists
     local_path = None
     if data.get('image_url'):
@@ -237,22 +250,27 @@ def save_post(db: Session, thread_id: int, data: dict):
         }
     )
     db.execute(stmt)
+    return is_new
 
 
-def scrape_thread(thread_num: int):
+def scrape_thread(thread_num: int) -> Tuple[int, int]:
     """Scrape a specific thread."""
     url = f"{BASE_URL}/res/{thread_num}.htm"
     # logger.info(f"Scraping thread {url}...") # verbose
     html = fetch_page(url)
     if html:
-        parse_and_save(html)
+        return parse_and_save(html)
         time.sleep(2) # Be polite
+    return 0, 0
 
 
 def scrape_cycle():
     """Main loop for scraping pages 0-10, then all found threads."""
     logger.info("Starting scrape cycle for pages 0-10")
     
+    total_new_threads = 0
+    total_new_posts = 0
+
     found_thread_numbers = set()
 
     for i in range(11):
@@ -273,7 +291,9 @@ def scrape_cycle():
                 if t_str:
                     found_thread_numbers.add(int(t_str))
 
-            parse_and_save(html)
+            nt, np = parse_and_save(html)
+            total_new_threads += nt
+            total_new_posts += np
         
         # Be polite
         time.sleep(2)
@@ -281,6 +301,8 @@ def scrape_cycle():
     logger.info(f"Index scrape complete. Found {len(found_thread_numbers)} threads. Starting full thread scrape...")
     
     for t_num in found_thread_numbers:
-        scrape_thread(t_num)
+        nt, np = scrape_thread(t_num)
+        total_new_threads += nt
+        total_new_posts += np
 
-    logger.info("Scrape cycle completed.")
+    logger.info(f"Scrape cycle completed. New Threads: {total_new_threads}, New Posts: {total_new_posts}")
