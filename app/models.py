@@ -22,6 +22,7 @@ class Post(Base):
     thread_id = Column(Integer, ForeignKey("threads.id"))
     name = Column(String, nullable=True)
     metadata_raw = Column(String, nullable=True) # For Date/IP/ID
+    posted_at = Column(DateTime, nullable=True)
     content = Column(Text, nullable=True)
     image_url = Column(String, nullable=True)
     local_image_path = Column(String, nullable=True)

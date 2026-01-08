@@ -2,6 +2,7 @@ import logging
 import time
 import os
 import requests
+import re
 from typing import Tuple
 from bs4 import BeautifulSoup
 from sqlalchemy.dialects.postgresql import insert
@@ -176,6 +177,24 @@ def parse_and_save(html: str) -> Tuple[int, int]:
                      # Update thread subject if we have it
                      thread_obj.subject = subject
                 
+                # Metadata (Date/IP/ID)
+                # <span class="cnw">25/12/14(日)18:22:44 IP:49.98.*(spmode.ne.jp)</span>
+                cnw = element.find('span', class_='cnw')
+                raw_meta = cnw.get_text(strip=True) if cnw else None
+                post_data['metadata_raw'] = raw_meta
+                
+                # Parse Date
+                post_data['posted_at'] = None
+                if raw_meta:
+                     # 25/12/14(日)18:22:44
+                     match = re.search(r'(\d{2}/\d{2}/\d{2})\(.\)(\d{2}:\d{2}:\d{2})', raw_meta)
+                     if match:
+                         dt_str = f"{match.group(1)} {match.group(2)}"
+                         try:
+                             post_data['posted_at'] = datetime.strptime(dt_str, "%y/%m/%d %H:%M:%S")
+                         except ValueError:
+                             pass
+                
                 # Content
                 blockquote = element.find('blockquote')
                 post_data['content'] = blockquote.get_text('\n', strip=True) if blockquote else ""
@@ -241,12 +260,14 @@ def save_post(db: Session, thread_id: int, data: dict) -> bool:
         image_url=data.get('image_url'),
         local_image_path=local_path,
         is_op=data['is_op'],
-        # metadata_raw TODO
+        metadata_raw=data.get('metadata_raw'),
+        posted_at=data.get('posted_at')
     ).on_conflict_do_update(
         index_elements=['post_number'],
         set_={
             'content': data.get('content'),
-            'local_image_path': local_path # Update if we downloaded it now
+            'local_image_path': local_path, # Update if we downloaded it now
+            'posted_at': data.get('posted_at')
         }
     )
     db.execute(stmt)
