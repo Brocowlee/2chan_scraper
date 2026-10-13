@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>2chan Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2; --surface: #fcfcfb; --border: #e2e1dc;
+    --text: #0b0b0b; --text-2: #52514e; --muted: #8a8983; --grid: #ecebe7;
+    --series-1: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111110; --surface: #1a1a19; --border: #2e2e2c;
+      --text: #f0efec; --text-2: #c3c2b7; --muted: #8a897f; --grid: #262624;
+      --series-1: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  h1 { font-size: 20px; margin: 0; }
+  header form button {
+    background: none; border: 1px solid var(--border); color: var(--text-2);
+    border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer;
+  }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi, .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  .kpi { padding: 14px 16px; }
+  .kpi .label { color: var(--text-2); font-size: 12px; }
+  .kpi .value { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi .sub { color: var(--muted); font-size: 12px; }
+  .card { padding: 18px; margin-bottom: 16px; }
+  .card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 0; }
+  .note { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    background: none; border: 0; color: var(--text-2); font: inherit; font-size: 13px;
+    padding: 5px 12px; cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button[aria-pressed="true"] { background: var(--text); color: var(--surface); }
+  .chart-box { position: relative; height: 340px; }
+  #ngramBox { height: auto; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>2chan Dashboard</h1>
+    <form method="post" action="/logout"><button type="submit">Déconnexion</button></form>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><div class="label">Posts</div><div class="value" id="kpiPosts">–</div><div class="sub" id="kpiRange"></div></div>
+    <div class="kpi"><div class="label">Threads</div><div class="value" id="kpiThreads">–</div></div>
+    <div class="kpi"><div class="label">Posts (7 derniers jours)</div><div class="value" id="kpi7d">–</div></div>
+    <div class="kpi"><div class="label">Posts analysés (n-grams)</div><div class="value" id="kpiTok">–</div><div class="sub" id="kpiTokSub"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2 id="timeTitle">Posts par semaine</h2>
+      <div class="controls">
+        <div class="seg" id="granularity">
+          <button data-value="week" aria-pressed="true">Semaine</button>
+          <button data-value="month" aria-pressed="false">Mois</button>
+        </div>
+        <div class="seg" id="mode">
+          <button data-value="period" aria-pressed="true">Par période</button>
+          <button data-value="cumulative" aria-pressed="false">Cumulé</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">Date du post (heure japonaise). Les périodes antérieures au début de la collecte ne contiennent que les posts de threads encore actifs à ce moment-là.</p>
+    <div class="chart-box"><canvas id="timeChart" aria-label="Nombre de posts dans le temps" role="img"></canvas></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2 id="ngramTitle">Bigrammes les plus fréquents</h2>
+      <div class="controls">
+        <div class="seg" id="ngramN">
+          <button data-value="2" aria-pressed="true">Bigrammes</button>
+          <button data-value="3" aria-pressed="false">Trigrammes</button>
+        </div>
+        <div class="seg" id="ngramPeriod">
+          <button data-value="30d" aria-pressed="false">30 j</button>
+          <button data-value="90d" aria-pressed="true">90 j</button>
+          <button data-value="365d" aria-pressed="false">1 an</button>
+          <button data-value="all" aria-pressed="false">Tout</button>
+        </div>
+      </div>
+    </div>
+    <p class="note" id="ngramNote">Nombre de posts contenant l'expression. Mots pleins uniquement (noms, verbes, adjectifs), lignes citées (&gt;) exclues.</p>
+    <div class="chart-box" id="ngramBox"><canvas id="ngramChart" aria-label="N-grams les plus fréquents" role="img"></canvas></div>
+  </section>
+</div>
+
+<script>
+const fmt = new Intl.NumberFormat("fr-FR");
+const state = { granularity: "week", mode: "period", n: "2", period: "90d" };
+const charts = {};
+let timeData = [], ngramData = null;
+
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+async function api(path) {
+  const res = await fetch(path, { credentials: "same-origin" });
+  if (res.status === 401) { location.href = "/login"; throw new Error("unauthenticated"); }
+  if (!res.ok) throw new Error(`${path}: ${res.status}`);
+  return res.json();
+}
+
+function baseOptions() {
+  const tick = () => ({ color: css("--text-2"), font: { size: 12 } });
+  return {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: css("--surface"), titleColor: css("--text"), bodyColor: css("--text-2"),
+        borderColor: css("--border"), borderWidth: 1, padding: 10, displayColors: false,
+      },
+    },
+    scales: {
+      x: { ticks: tick(), grid: { display: false }, border: { color: css("--border") } },
+      y: { ticks: tick(), grid: { color: css("--grid") }, border: { display: false } },
+    },
+  };
+}
+
+function bindSegment(id, key, onChange) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === btn));
+    state[key] = btn.dataset.value;
+    onChange();
+  });
+}
+
+function periodLabel(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return state.granularity === "month"
+    ? d.toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
+    : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
+}
+
+function renderTime() {
+  const cumulative = state.mode === "cumulative";
+  let running = 0;
+  const values = timeData.map(r => cumulative ? (running += r.posts) : r.posts);
+  const unit = state.granularity === "week" ? "semaine" : "mois";
+  document.getElementById("timeTitle").textContent =
+    cumulative ? `Posts cumulés par ${unit}` : `Posts par ${unit}`;
+
+  const opts = baseOptions();
+  opts.scales.y.beginAtZero = true;
+  opts.scales.y.ticks.callback = v => Intl.NumberFormat("fr-FR", { notation: "compact" }).format(v);
+  opts.scales.x.ticks.maxRotation = 0;
+  opts.scales.x.ticks.autoSkipPadding = 16;
+  opts.plugins.tooltip.callbacks = {
+    title: items => (state.granularity === "week" ? "Semaine du " : "") + periodLabel(timeData[items[0].dataIndex].period),
+    label: item => cumulative
+      ? `${fmt.format(item.raw)} posts au total (+${fmt.format(timeData[item.dataIndex].posts)})`
+      : `${fmt.format(item.raw)} posts`,
+  };
+
+  charts.time?.destroy();
+  charts.time = new Chart(document.getElementById("timeChart"), {
+    type: "bar",
+    data: {
+      labels: timeData.map(r => periodLabel(r.period)),
+      datasets: [{
+        data: values, backgroundColor: css("--series-1"),
+        borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "start",
+        maxBarThickness: 24, categoryPercentage: 0.9, barPercentage: 0.9,
+      }],
+    },
+    options: opts,
+  });
+}
+
+// Draws each bar's value just past its end
+const valueLabels = {
+  id: "valueLabels",
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    ctx.save();
+    ctx.fillStyle = css("--text-2");
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.textBaseline = "middle";
+    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+      ctx.fillText(fmt.format(chart.data.datasets[0].data[i]), bar.x + 6, bar.y);
+    });
+    ctx.restore();
+  },
+};
+
+function renderNgrams() {
+  const box = document.getElementById("ngramBox");
+  document.getElementById("ngramTitle").textContent =
+    `${state.n === "2" ? "Bigrammes" : "Trigrammes"} les plus fréquents`;
+  charts.ngram?.destroy();
+  charts.ngram = null;
+
+  if (!ngramData || ngramData.items.length === 0) {
+    box.innerHTML = '<div class="empty">Pas encore de données (tokenisation en cours ?)</div>';
+    return;
+  }
+  box.innerHTML = '<canvas id="ngramChart" aria-label="N-grams les plus fréquents" role="img"></canvas>';
+  box.style.height = `${ngramData.items.length * 26 + 40}px`;
+
+  const opts = baseOptions();
+  opts.indexAxis = "y";
+  opts.layout = { padding: { right: 48 } };
+  opts.scales.x.grid = { color: css("--grid") };
+  opts.scales.x.beginAtZero = true;
+  opts.scales.y.grid = { display: false };
+  opts.scales.y.ticks.autoSkip = false;
+  opts.plugins.tooltip.callbacks = {
+    label: item => `${fmt.format(item.raw)} posts sur ${fmt.format(ngramData.posts)} (${(100 * item.raw / ngramData.posts).toFixed(2)} %)`,
+  };
+
+  charts.ngram = new Chart(document.getElementById("ngramChart"), {
+    type: "bar",
+    data: {
+      labels: ngramData.items.map(i => i.ngram),
+      datasets: [{
+        data: ngramData.items.map(i => i.posts), backgroundColor: css("--series-1"),
+        borderRadius: { topRight: 4, bottomRight: 4 }, borderSkipped: "start",
+        maxBarThickness: 18,
+      }],
+    },
+    options: opts,
+    plugins: [valueLabels],
+  });
+}
+
+async function loadSummary() {
+  const s = await api("/api/summary");
+  document.getElementById("kpiPosts").textContent = fmt.format(s.posts);
+  document.getElementById("kpiThreads").textContent = fmt.format(s.threads);
+  document.getElementById("kpi7d").textContent = fmt.format(s.posts_7d);
+  document.getElementById("kpiTok").textContent = s.posts ? `${Math.floor(100 * s.tokenized / s.posts)} %` : "–";
+  document.getElementById("kpiTokSub").textContent = `${fmt.format(s.tokenized)} / ${fmt.format(s.posts)}`;
+  if (s.first_post) {
+    const d = v => new Date(v).toLocaleDateString("fr-FR");
+    document.getElementById("kpiRange").textContent = `${d(s.first_post)} → ${d(s.last_post)}`;
+  }
+}
+
+async function loadTime() {
+  timeData = await api(`/api/posts-over-time?granularity=${state.granularity}`);
+  renderTime();
+}
+
+async function loadNgrams() {
+  document.getElementById("ngramBox").style.opacity = 0.5;
+  try {
+    ngramData = await api(`/api/ngrams?n=${state.n}&period=${state.period}&limit=30`);
+    renderNgrams();
+  } finally {
+    document.getElementById("ngramBox").style.opacity = 1;
+  }
+}
+
+bindSegment("granularity", "granularity", loadTime);
+bindSegment("mode", "mode", renderTime);
+bindSegment("ngramN", "n", loadNgrams);
+bindSegment("ngramPeriod", "period", loadNgrams);
+
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderTime(); renderNgrams(); });
+
+loadSummary();
+loadTime();
+loadNgrams();
+</script>
+</body>
+</html>

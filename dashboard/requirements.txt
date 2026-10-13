@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn==0.34.0
+itsdangerous==2.2.0
+python-multipart==0.0.20
+sqlalchemy==2.0.45
+psycopg2-binary==2.9.11
+python-dotenv==1.2.1
+fugashi==1.4.0
+unidic-lite==1.0.8

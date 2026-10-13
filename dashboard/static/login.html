@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>2chan Dashboard · Connexion</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2; --surface: #fcfcfb; --border: #e2e1dc;
+    --text: #0b0b0b; --muted: #6b6a65; --accent: #2a78d6; --danger: #c43b3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111110; --surface: #1a1a19; --border: #2e2e2c;
+      --text: #f0efec; --muted: #9a998f; --accent: #3987e5; --danger: #e66767;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px;
+    background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  form {
+    width: 100%; max-width: 340px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; padding: 28px;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+  input, button {
+    width: 100%; font: inherit; border-radius: 8px; padding: 10px 12px;
+  }
+  input {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border); margin-bottom: 12px;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button { border: 0; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
+  .error { color: var(--danger); font-size: 13px; margin: 0 0 12px; min-height: 0; }
+</style>
+</head>
+<body>
+<form method="post" action="/login">
+  <h1>2chan Dashboard</h1>
+  <p>Accès protégé</p>
+  <div class="error" id="error" role="alert"></div>
+  <input type="password" name="password" placeholder="Mot de passe" autocomplete="current-password" required autofocus>
+  <button type="submit">Se connecter</button>
+</form>
+<script>
+  const messages = {
+    invalid: "Mot de passe incorrect.",
+    locked: "Trop de tentatives. Réessayez dans 15 minutes.",
+  };
+  const error = new URLSearchParams(location.search).get("error");
+  document.getElementById("error").textContent = messages[error] || "";
+</script>
+</body>
+</html>
