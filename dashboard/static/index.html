@@ -12,6 +12,10 @@
     --bg: #f4f4f2; --surface: #fcfcfb; --border: #e2e1dc;
     --text: #0b0b0b; --text-2: #52514e; --muted: #8a8983; --grid: #ecebe7;
     --series-1: #2a78d6;
+    --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100;
+    --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
+    --pol-far_left: #a52a2a; --pol-left: #e8706f; --pol-center: #5f5e5a;
+    --pol-right: #5598e7; --pol-far_right: #1c5cab; --pol-non_political: #b5b4ae;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -19,6 +23,10 @@
       --bg: #111110; --surface: #1a1a19; --border: #2e2e2c;
       --text: #f0efec; --text-2: #c3c2b7; --muted: #8a897f; --grid: #262624;
       --series-1: #3987e5;
+      --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500;
+      --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
+      --pol-far_left: #b93a3a; --pol-left: #e57372; --pol-center: #6f6e68;
+      --pol-right: #5e9de8; --pol-far_right: #2a66b8; --pol-non_political: #55544f;
     }
   }
   * { box-sizing: border-box; }
@@ -54,6 +62,137 @@
   .chart-box { position: relative; height: 340px; }
   #ngramBox { height: auto; }
   .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tabs a {
+    color: var(--text-2); text-decoration: none; padding: 8px 14px; margin-bottom: -1px;
+    border-bottom: 2px solid transparent; font-weight: 500;
+  }
+  .tabs a[aria-selected="true"] { color: var(--text); border-bottom-color: var(--text); }
+  [hidden] { display: none !important; }
+  .check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 13px; cursor: pointer; }
+  .link-btn {
+    color: var(--text-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 12px; font-size: 13px; text-decoration: none;
+  }
+  .mosaic-scroll { overflow: auto; max-height: 80vh; border-radius: 8px; background: #000; }
+  .mosaic-wrap { position: relative; line-height: 0; cursor: zoom-in; }
+  .mosaic-wrap img { display: block; width: 100%; }
+  .mosaic-wrap.natural img { width: auto; max-width: none; }
+  .mosaic-wrap.natural { width: max-content; }
+  .mosaic-wrap.veiled img { filter: blur(28px); }
+  .mosaic-wrap.veiled { cursor: default; overflow: hidden; }
+  .veil {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-start; gap: 12px; line-height: 1.5; color: #fff; text-align: center; padding: 120px 16px 16px;
+  }
+  .veil button {
+    background: #fff; color: #000; border: 0; border-radius: 8px; padding: 8px 16px;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  #tileHighlight {
+    position: absolute; pointer-events: none; outline: 2px solid #fff;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, .6); display: none;
+  }
+  #tileTip {
+    position: fixed; z-index: 10; pointer-events: none; display: none;
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; font-size: 12px; line-height: 1.4; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .15);
+  }
+  #tileTip .muted { color: var(--text-2); }
+  .progress { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; max-width: 360px; margin: 12px auto 0; }
+  .progress div { height: 100%; background: var(--series-1); width: 0; transition: width .3s; }
+  .lightbox {
+    position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px;
+  }
+  .lightbox img, .lightbox video { max-width: 100%; max-height: calc(100vh - 100px); object-fit: contain; }
+  .lightbox .caption { color: #e8e8e4; font-size: 13px; text-align: center; }
+  .lightbox .caption a { color: #9cc3f5; }
+  .lightbox button {
+    position: absolute; top: 12px; right: 16px; background: none; border: 0;
+    color: #fff; font-size: 28px; line-height: 1; cursor: pointer;
+  }
+  .post-list { display: flex; flex-direction: column; gap: 10px; }
+  .post { border: 1px solid var(--border); border-left: 4px solid var(--pol, var(--border)); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+  .post-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .post-head a { color: var(--text-2); }
+  .post-head .op { color: var(--text-2); font-weight: 600; }
+  .post-body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; font: inherit; }
+  .post-body .quote { color: #789922; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 1px 9px;
+    font-size: 12px; font-weight: 600; color: #fff; background: var(--pol, var(--muted));
+  }
+  .badge.plain { background: none; color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
+  .post-head .badge { margin-left: auto; }
+  .probs { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 10px; background: var(--grid); }
+  .probs div { height: 100%; }
+  .img-link, .tr-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text-2); font: inherit; font-size: 12px; padding: 0 8px; cursor: pointer; }
+  .post-translation { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 0; padding: 6px 0 0 10px; border-left: 2px solid var(--border); color: var(--text-2); }
+  .post-translation.error, .title-translation.error { color: var(--muted); font-style: italic; }
+  .title-translation { color: var(--text-2); font-size: 14px; margin: 0 0 4px; overflow-wrap: anywhere; }
+  .filters button { font: inherit; font-size: 13px; color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .filters input, .filters select {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
+  }
+  .date-range { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+  .filters input[type="search"] { flex: 1 1 220px; min-width: 0; }
+  .thread-list { display: flex; flex-direction: column; gap: 10px; }
+  .thread-item {
+    display: block; color: inherit; text-decoration: none; border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; background: var(--surface);
+  }
+  .thread-item:hover { border-color: var(--text-2); }
+  .thread-item h3 { font-size: 15px; margin: 0 0 2px; overflow-wrap: anywhere; }
+  .thread-item .excerpt {
+    color: var(--text-2); font-size: 13px; margin: 6px 0 0; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .meta { color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .back { color: var(--text-2); text-decoration: none; font-size: 13px; }
+  .thread-title { font-size: 18px; margin: 8px 0 4px; overflow-wrap: anywhere; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-2); margin-top: 8px; }
+  .legend span::before {
+    content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+    margin-right: 5px; vertical-align: -1px; background: var(--c);
+  }
+  .post .num { color: var(--text-2); font-weight: 600; }
+  .post-head a.num { text-decoration: none; }
+  .post.dim { opacity: .45; }
+  .post.flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { from { box-shadow: 0 0 0 3px var(--series-1); } to { box-shadow: 0 0 0 3px transparent; } }
+  .quote[data-target] { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  #quoteTip {
+    position: fixed; z-index: 10; pointer-events: none; display: none; max-width: min(460px, calc(100vw - 32px));
+    background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .15); max-height: 50vh; overflow: hidden;
+  }
+  #quoteTip .meta { margin-bottom: 4px; }
+  .people-list { display: flex; flex-direction: column; gap: 2px; }
+  .person-row {
+    display: grid; grid-template-columns: 2em minmax(0, 11em) minmax(0, 1fr) auto; align-items: center; gap: 10px;
+    background: none; border: 0; border-radius: 6px; padding: 4px 6px; font: inherit; color: inherit; text-align: left; cursor: pointer;
+  }
+  .person-row:hover { background: var(--grid); }
+  .person-row .rank { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .person-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person-row .bar { display: block; height: 8px; border-radius: 4px; background: var(--series-1); min-width: 2px; }
+  .person-row .count { color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12px; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; cursor: pointer; user-select: none;
+  }
+  .chip[aria-pressed="true"] { color: var(--text); border-color: var(--text-2); }
+  .chip .swatch { width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--muted); }
+  .chip[aria-pressed="true"] .swatch { border-color: transparent; background: var(--c); }
+  .chips .sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 4px; }
+  .chips .limit { color: var(--muted); font-size: 12px; }
+  .more { display: block; margin: 14px auto 0; background: none; border: 1px solid var(--border); color: var(--text-2); border-radius: 8px; padding: 6px 16px; font: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -63,9 +202,18 @@
     <form method="post" action="/logout"><button type="submit">Déconnexion</button></form>
   </header>
 
+  <nav class="tabs" role="tablist">
+    <a href="#stats" role="tab" data-tab="stats" aria-selected="true">Statistiques</a>
+    <a href="#mosaic" role="tab" data-tab="mosaic" aria-selected="false">Mosaïque</a>
+    <a href="#politics" role="tab" data-tab="politics" aria-selected="false">Politique</a>
+    <a href="#threads" role="tab" data-tab="threads" aria-selected="false">Threads</a>
+    <a href="#posts" role="tab" data-tab="posts" aria-selected="false">Posts</a>
+  </nav>
+
+  <div id="tab-stats" role="tabpanel">
   <section class="kpis">
     <div class="kpi"><div class="label">Posts</div><div class="value" id="kpiPosts">–</div><div class="sub" id="kpiRange"></div></div>
-    <div class="kpi"><div class="label">Threads</div><div class="value" id="kpiThreads">–</div></div>
+    <div class="kpi"><div class="label">Threads actifs</div><div class="value" id="kpiThreads">–</div></div>
     <div class="kpi"><div class="label">Posts (7 derniers jours)</div><div class="value" id="kpi7d">–</div></div>
     <div class="kpi"><div class="label">Posts analysés (n-grams)</div><div class="value" id="kpiTok">–</div><div class="sub" id="kpiTokSub"></div></div>
   </section>
@@ -84,7 +232,7 @@
         </div>
       </div>
     </div>
-    <p class="note">Date du post (heure japonaise). Les périodes antérieures au début de la collecte ne contiennent que les posts de threads encore actifs à ce moment-là.</p>
+    <p class="note">Posts publiés depuis le 1<sup>er</sup> janvier 2026, par date du post (heure japonaise).</p>
     <div class="chart-box"><canvas id="timeChart" aria-label="Nombre de posts dans le temps" role="img"></canvas></div>
   </section>
 
@@ -99,26 +247,227 @@
         <div class="seg" id="ngramPeriod">
           <button data-value="30d" aria-pressed="false">30 j</button>
           <button data-value="90d" aria-pressed="true">90 j</button>
-          <button data-value="365d" aria-pressed="false">1 an</button>
-          <button data-value="all" aria-pressed="false">Tout</button>
+          <button data-value="all" aria-pressed="false">2026</button>
         </div>
       </div>
     </div>
-    <p class="note" id="ngramNote">Nombre de posts contenant l'expression. Mots pleins uniquement (noms, verbes, adjectifs), lignes citées (&gt;) exclues.</p>
+    <p class="note" id="ngramNote">Nombre de posts contenant l'expression. Mots pleins uniquement (noms, verbes, adjectifs). Lignes citées (&gt;) et lignes recopiées d'un post antérieur (modèles, posts automatiques, copypastas) exclues.</p>
     <div class="chart-box" id="ngramBox"><canvas id="ngramChart" aria-label="N-grams les plus fréquents" role="img"></canvas></div>
   </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Personnes les plus discutées</h2>
+      <div class="controls">
+        <div class="seg" id="peoplePeriod">
+          <button data-value="30d" aria-pressed="false">30 j</button>
+          <button data-value="90d" aria-pressed="true">90 j</button>
+          <button data-value="all" aria-pressed="false">2026</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">Nombre de posts nommant la personne. Noms reconnus par l'analyseur morphologique (UniDic) et regroupés par nom de famille : des homonymes sont donc confondus, et les prénoms employés seuls ne sont pas comptés. Mêmes exclusions que les n-grams. Cliquez sur un nom pour voir ses posts.</p>
+    <div class="people-list" id="peopleList"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2 id="peopleTimeTitle">Évolution des personnes les plus discutées</h2>
+      <div class="controls">
+        <div class="seg" id="peopleGranularity">
+          <button data-value="day" aria-pressed="false">Jour</button>
+          <button data-value="week" aria-pressed="true">Semaine</button>
+          <button data-value="month" aria-pressed="false">Mois</button>
+        </div>
+        <div class="seg" id="peopleMode">
+          <button data-value="absolute" aria-pressed="true">Posts</button>
+          <button data-value="share" aria-pressed="false">% des posts</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">Posts nommant chacune des personnes les plus discutées depuis le 1<sup>er</sup> janvier, par date du post (heure japonaise). « % des posts » rapporte ce nombre à l'ensemble des posts de la période, pour neutraliser les variations d'activité du forum. Cliquez sur un nom pour l'afficher ou le masquer, double-cliquez pour n'afficher que lui (8 courbes au maximum). La période en cours, incomplète, est en pointillés.</p>
+    <div class="chips" id="peopleChips"></div>
+    <div class="chart-box"><canvas id="peopleTimeChart" aria-label="Nombre de posts nommant les personnes les plus discutées dans le temps" role="img"></canvas></div>
+  </section>
+  </div>
+
+  <div id="tab-politics" role="tabpanel" hidden>
+  <section class="kpis">
+    <div class="kpi"><div class="label">Posts classés</div><div class="value" id="kpiPolCov">–</div><div class="sub" id="kpiPolCovSub"></div></div>
+    <div class="kpi"><div class="label">Part de posts politiques</div><div class="value" id="kpiPolShare">–</div><div class="sub" id="kpiPolShareSub"></div></div>
+    <div class="kpi"><div class="label">Orientation dominante (30 derniers jours)</div><div class="value" id="kpiPolTop">–</div><div class="sub" id="kpiPolTopSub"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2 id="polTitle">Orientation politique par semaine</h2>
+      <div class="controls">
+        <div class="seg" id="polGranularity">
+          <button data-value="day" aria-pressed="false">Jour</button>
+          <button data-value="week" aria-pressed="true">Semaine</button>
+          <button data-value="month" aria-pressed="false">Mois</button>
+        </div>
+        <div class="seg" id="polMode">
+          <button data-value="absolute" aria-pressed="true">Absolu</button>
+          <button data-value="share" aria-pressed="false">Proportion</button>
+        </div>
+        <div class="seg" id="polConfidence">
+          <button data-value="0" aria-pressed="true">Toutes</button>
+          <button data-value="0.3" aria-pressed="false">Confiance ≥ 0,3</button>
+          <button data-value="0.6" aria-pressed="false">≥ 0,6</button>
+        </div>
+        <label class="check"><input type="checkbox" id="polNonPolitical"> Inclure non politique</label>
+      </div>
+    </div>
+    <p class="note" id="polNote"></p>
+    <div class="chart-box"><canvas id="polChart" aria-label="Orientation politique des posts dans le temps" role="img"></canvas></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Part des posts politiques</h2></div>
+    <p class="note">Posts classés dans une orientation politique, en % des posts contenant du texte (même filtre de confiance).</p>
+    <div class="chart-box"><canvas id="polShareChart" aria-label="Part des posts politiques dans le temps" role="img"></canvas></div>
+  </section>
+  </div>
+
+  <div id="tab-threads" role="tabpanel" hidden>
+  <section class="card" id="threadListView">
+    <div class="card-head"><h2>Threads</h2></div>
+    <p class="note">Threads ayant au moins un post dans la période choisie. La barre montre la répartition des orientations politiques de leurs posts (les posts non politiques en gris).</p>
+    <form class="filters" id="threadFilters">
+      <input type="search" id="threadQuery" placeholder="Rechercher dans le titre ou les posts…" aria-label="Rechercher dans le titre ou les posts">
+      <span class="date-range">
+        <input type="date" id="threadFrom" min="2026-01-01" aria-label="Du">
+        <span>→</span>
+        <input type="date" id="threadTo" min="2026-01-01" aria-label="Au">
+      </span>
+      <div class="seg" id="threadPreset">
+        <button type="button" data-days="1" aria-pressed="false">Aujourd'hui</button>
+        <button type="button" data-days="7" aria-pressed="false">7 j</button>
+        <button type="button" data-days="30" aria-pressed="false">30 j</button>
+        <button type="button" data-days="" aria-pressed="true">Tout</button>
+      </div>
+      <select id="threadSort" aria-label="Tri">
+        <option value="recent">Activité récente</option>
+        <option value="oldest">Plus anciens</option>
+        <option value="posts">Plus de posts</option>
+        <option value="political">Plus de posts politiques</option>
+      </select>
+    </form>
+    <div class="thread-list" id="threadList"></div>
+    <button type="button" class="more" id="threadMore" hidden>Charger plus</button>
+  </section>
+
+  <section class="card" id="threadView" hidden>
+    <a href="#threads" class="back">← Tous les threads</a>
+    <h2 class="thread-title" id="threadTitle"></h2>
+    <p class="title-translation" id="threadTitleTr" hidden></p>
+    <div class="meta" id="threadMeta"></div>
+    <div id="threadBar"></div>
+    <div class="legend" id="threadLegend"></div>
+    <div class="filters" style="margin-top: 12px">
+      <label class="check"><input type="checkbox" id="threadDim"> Atténuer les posts non politiques</label>
+      <button type="button" id="threadTranslate">Traduire le thread</button>
+    </div>
+    <p class="note">Les lignes citées (&gt;) soulignées renvoient au post d'origine : survolez pour l'aperçu, cliquez pour y aller.</p>
+    <div class="post-list" id="threadPosts"></div>
+  </section>
+  </div>
+
+  <div id="tab-posts" role="tabpanel" hidden>
+  <section class="card">
+    <div class="card-head"><h2>Posts</h2></div>
+    <p class="note">Posts publiés depuis le 1<sup>er</sup> janvier 2026 et leur orientation politique (TypeSafe AI, modèle Jev). La barre sous chaque post montre la probabilité de chaque orientation.</p>
+    <form class="filters" id="postFilters">
+      <input type="search" id="postQuery" placeholder="Rechercher dans le texte…" aria-label="Rechercher dans le texte">
+      <span class="date-range">
+        <input type="date" id="postFrom" min="2026-01-01" aria-label="Du">
+        <span>→</span>
+        <input type="date" id="postTo" min="2026-01-01" aria-label="Au">
+      </span>
+      <div class="seg" id="postPreset">
+        <button type="button" data-days="1" aria-pressed="false">Aujourd'hui</button>
+        <button type="button" data-days="7" aria-pressed="false">7 j</button>
+        <button type="button" data-days="30" aria-pressed="false">30 j</button>
+        <button type="button" data-days="" aria-pressed="true">Tout</button>
+      </div>
+      <select id="postLabel" aria-label="Orientation">
+        <option value="all">Toutes orientations</option>
+        <option value="political">Politiques (toutes)</option>
+        <option value="far_left">Extrême gauche</option>
+        <option value="left">Gauche</option>
+        <option value="center">Centre</option>
+        <option value="right">Droite</option>
+        <option value="far_right">Extrême droite</option>
+        <option value="non_political">Non politique</option>
+        <option value="empty">Sans texte</option>
+        <option value="unclassified">Non classés</option>
+      </select>
+      <select id="postConfidence" aria-label="Confiance minimale">
+        <option value="0">Toutes confiances</option>
+        <option value="0.3">Confiance ≥ 0,3</option>
+        <option value="0.6">Confiance ≥ 0,6</option>
+        <option value="0.8">Confiance ≥ 0,8</option>
+      </select>
+      <select id="postSort" aria-label="Tri">
+        <option value="recent">Plus récents</option>
+        <option value="oldest">Plus anciens</option>
+        <option value="confidence">Confiance décroissante</option>
+      </select>
+      <button type="button" id="postPerson" hidden aria-label="Retirer le filtre personne"></button>
+    </form>
+    <div class="post-list" id="postList"></div>
+    <button type="button" class="more" id="postMore" hidden>Charger plus</button>
+  </section>
+  </div>
+
+  <div id="tab-mosaic" role="tabpanel" hidden>
+  <section class="card">
+    <div class="card-head">
+      <h2>Mosaïque des images</h2>
+      <div class="controls">
+        <div class="seg" id="mosaicSet">
+          <button data-value="safe" aria-pressed="true">Filtrées</button>
+          <button data-value="nsfw" aria-pressed="false">Exclues uniquement</button>
+        </div>
+        <div class="seg" id="mosaicLayout">
+          <button data-value="time" aria-pressed="true">Chronologique</button>
+          <button data-value="color" aria-pressed="false">Par couleur</button>
+        </div>
+        <div class="seg" id="mosaicZoom">
+          <button data-value="fit" aria-pressed="true">Ajustée</button>
+          <button data-value="natural" aria-pressed="false">Taille réelle</button>
+        </div>
+        <a class="link-btn" id="mosaicDownload" download>Télécharger</a>
+      </div>
+    </div>
+    <p class="note" id="mosaicNote"></p>
+    <div id="mosaicBody"></div>
+  </section>
+  </div>
+</div>
+
+<div id="tileTip"></div>
+<div id="quoteTip"></div>
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" aria-label="Fermer" id="lightboxClose">×</button>
+  <div id="lightboxMedia"></div>
+  <div class="caption" id="lightboxCaption"></div>
 </div>
 
 <script>
 const fmt = new Intl.NumberFormat("fr-FR");
-const state = { granularity: "week", mode: "period", n: "2", period: "90d" };
+const state = {
+  granularity: "week", mode: "period", n: "2", period: "90d",
+  peoplePeriod: "90d", peopleGranularity: "week", peopleMode: "absolute",
+};
 const charts = {};
 let timeData = [], ngramData = null;
 
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-async function api(path) {
-  const res = await fetch(path, { credentials: "same-origin" });
+async function api(path, options = {}) {
+  const res = await fetch(path, { credentials: "same-origin", ...options });
   if (res.status === 401) { location.href = "/login"; throw new Error("unauthenticated"); }
   if (!res.ok) throw new Error(`${path}: ${res.status}`);
   return res.json();
@@ -283,12 +632,915 @@ bindSegment("granularity", "granularity", loadTime);
 bindSegment("mode", "mode", renderTime);
 bindSegment("ngramN", "n", loadNgrams);
 bindSegment("ngramPeriod", "period", loadNgrams);
+bindSegment("peoplePeriod", "peoplePeriod", loadPeople);
 
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderTime(); renderNgrams(); });
+bindSegment("peopleGranularity", "peopleGranularity", loadPeopleTime);
+bindSegment("peopleMode", "peopleMode", renderPeopleTime);
+let peopleTimeData = null;
+// Shown people: id -> color slot (1-8). A person keeps its color while shown.
+const peopleShown = new Map();
+const MAX_SHOWN = 8, DEFAULT_SHOWN = 5;
 
-loadSummary();
-loadTime();
-loadNgrams();
+function showDefaultPeople() {
+  peopleShown.clear();
+  peopleTimeData.people.slice(0, DEFAULT_SHOWN).forEach((p, i) => peopleShown.set(p.id, i + 1));
+}
+
+function togglePerson(id) {
+  if (peopleShown.has(id)) {
+    peopleShown.delete(id);
+  } else if (peopleShown.size >= MAX_SHOWN) {
+    const limit = document.querySelector("#peopleChips .limit");
+    limit.hidden = false;
+    clearTimeout(limit.timer);
+    limit.timer = setTimeout(() => { limit.hidden = true; }, 3000);
+    return;
+  } else {
+    const used = new Set(peopleShown.values());
+    peopleShown.set(id, [1, 2, 3, 4, 5, 6, 7, 8].find(slot => !used.has(slot)));
+  }
+  updatePeopleTime();
+}
+
+function renderPeopleChips() {
+  const box = document.getElementById("peopleChips");
+  box.innerHTML = "";
+  for (const p of peopleTimeData.people) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.dataset.id = p.id;
+    chip.title = `${p.display_name} · ${fmt.format(p.posts.reduce((a, b) => a + b, 0))} posts`;
+    chip.innerHTML = '<span class="swatch"></span><span></span>';
+    chip.lastChild.textContent = p.name;
+    chip.addEventListener("click", () => togglePerson(p.id));
+    // Like Plotly: double-click isolates the person
+    chip.addEventListener("dblclick", () => {
+      peopleShown.clear();
+      peopleShown.set(p.id, 1);
+      updatePeopleTime();
+    });
+    box.append(chip);
+  }
+  const sep = document.createElement("span");
+  sep.className = "sep";
+  box.append(sep);
+  for (const [text, action] of [["Top 5", showDefaultPeople], ["Aucun", () => peopleShown.clear()]]) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip";
+    btn.textContent = text;
+    btn.addEventListener("click", () => { action(); updatePeopleTime(); });
+    box.append(btn);
+  }
+  const limit = document.createElement("span");
+  limit.className = "limit";
+  limit.hidden = true;
+  limit.textContent = `${MAX_SHOWN} personnes au maximum : masquez-en une d'abord.`;
+  box.append(limit);
+}
+
+// Applies the selection to the chips and the chart without rebuilding it
+function updatePeopleTime() {
+  document.querySelectorAll("#peopleChips .chip[data-id]").forEach(chip => {
+    const slot = peopleShown.get(Number(chip.dataset.id));
+    chip.setAttribute("aria-pressed", slot !== undefined);
+    chip.style.setProperty("--c", slot ? css(`--cat-${slot}`) : "");
+  });
+  const chart = charts.peopleTime;
+  if (!chart) return;
+  chart.data.datasets.forEach((ds, i) => {
+    const slot = peopleShown.get(peopleTimeData.people[i].id);
+    ds.hidden = slot === undefined;
+    if (slot) ds.borderColor = ds.backgroundColor = css(`--cat-${slot}`);
+  });
+  chart.update();
+}
+
+async function loadPeopleTime() {
+  const box = document.getElementById("peopleTimeChart").parentElement;
+  box.style.opacity = 0.5;
+  try {
+    const first = !peopleTimeData;
+    peopleTimeData = await api(`/api/people-over-time?granularity=${state.peopleGranularity}&top=20`);
+    if (first) { showDefaultPeople(); renderPeopleChips(); }
+    renderPeopleTime();
+  } finally {
+    box.style.opacity = 1;
+  }
+}
+
+function renderPeopleTime() {
+  if (!peopleTimeData) return;
+  const { periods, total_posts: totals, people } = peopleTimeData;
+  const share = state.peopleMode === "share";
+  const unit = { day: "jour", week: "semaine", month: "mois" }[state.peopleGranularity];
+  document.getElementById("peopleTimeTitle").textContent =
+    `Évolution des personnes les plus discutées, par ${unit}`;
+  const label = iso => {
+    const d = new Date(iso + "T00:00:00");
+    return state.peopleGranularity === "month"
+      ? d.toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
+      : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
+  };
+  const value = (n, i) => share ? (totals[i] ? n / totals[i] : null) : n;
+
+  const opts = polOptions(share ? pct
+                                : (v => Intl.NumberFormat("fr-FR", { notation: "compact" }).format(v)));
+  opts.plugins.tooltip.callbacks = {
+    title: items => (state.peopleGranularity === "week" ? "Semaine du " : "") + label(periods[items[0].dataIndex]),
+    label: item => {
+      const p = people[item.datasetIndex], n = p.posts[item.dataIndex], total = totals[item.dataIndex];
+      return `${p.display_name} : ${fmt.format(n)} posts${total ? ` (${pct(n / total)})` : ""}`;
+    },
+    footer: items => `${fmt.format(totals[items[0].dataIndex])} posts au total`,
+  };
+  // The chips are the legend
+  opts.plugins.legend.display = false;
+  // Lines are named after the person's short key, so end labels fit in the right padding
+  charts.peopleTime?.destroy();
+  charts.peopleTime = new Chart(document.getElementById("peopleTimeChart"), {
+    type: "line",
+    data: {
+      labels: periods.map(label),
+      datasets: people.map(p => ({
+        ...lineDataset(p.name, p.posts.map(value), css("--muted")),
+        // The current period is not over yet
+        segment: { borderDash: ctx => ctx.p1DataIndex === periods.length - 1 ? [5, 4] : undefined },
+      })),
+    },
+    options: opts,
+    plugins: [endLabels],
+  });
+  updatePeopleTime();
+}
+
+async function loadPeople() {
+  const list = document.getElementById("peopleList");
+  list.style.opacity = 0.5;
+  try {
+    const data = await api(`/api/people?period=${state.peoplePeriod}&limit=30`);
+    list.innerHTML = "";
+    if (!data.items.length) list.innerHTML = '<div class="empty">Aucune personne trouvée sur cette période.</div>';
+    const max = data.items[0]?.posts || 1;
+    data.items.forEach((person, i) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "person-row";
+      row.innerHTML = '<span class="rank"></span><span class="name"></span><span><span class="bar"></span></span><span class="count"></span>';
+      row.querySelector(".rank").textContent = i + 1;
+      row.querySelector(".name").textContent = person.display_name;
+      row.querySelector(".name").title = person.display_name;
+      row.querySelector(".bar").style.width = `${100 * person.posts / max}%`;
+      row.querySelector(".count").textContent =
+        `${fmt.format(person.posts)} posts · ${fmt.format(person.threads)} threads`;
+      row.addEventListener("click", () => filterPostsByPerson(person));
+      list.append(row);
+    });
+  } finally {
+    list.style.opacity = 1;
+  }
+}
+
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderTime(); renderNgrams(); renderPeopleTime(); });
+
+// ---- Mosaic ----
+const mosaic = { set: "safe", layout: "time", zoom: "fit", index: null, revealed: false, pollTimer: null };
+const dateTime = iso => new Date(iso).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+const currentSet = () => mosaic.index.sets[mosaic.set];
+const STEPS = { classifying: "Classification des images", building: "Génération des mosaïques" };
+
+async function loadMosaic() {
+  clearTimeout(mosaic.pollTimer);
+  const { status, index } = await api("/api/mosaic");
+  const body = document.getElementById("mosaicBody");
+  const note = document.getElementById("mosaicNote");
+  const busy = status.state !== "idle";
+
+  if (busy || !index) {
+    const pct = status.total ? Math.floor(100 * status.done / status.total) : 0;
+    if (!index) {
+      note.textContent = "";
+      body.innerHTML = `<div class="empty">${STEPS[status.state] || "Préparation"}… ${status.total ? `${fmt.format(status.done)} / ${fmt.format(status.total)} images` : ""}
+        <div class="progress"><div style="width:${pct}%"></div></div></div>`;
+    }
+    mosaic.pollTimer = setTimeout(loadMosaic, 3000);
+    if (!index) return;
+  }
+
+  const changed = mosaic.index?.generated_at !== index.generated_at;
+  mosaic.index = index;
+  const { safe, nsfw } = index.sets;
+  note.textContent = `${fmt.format(safe.count)} images · ${fmt.format(nsfw.count)} exclues par le filtre`
+    + ` (seuil ${index.threshold}) · depuis le 1er janvier 2026 · générée le ${dateTime(index.generated_at)}`
+    + (index.skipped ? ` · ${fmt.format(index.skipped)} vidéos ou fichiers illisibles non inclus` : "")
+    + (index.unclassified ? ` · ${fmt.format(index.unclassified)} non classées, exclues` : "")
+    + (busy ? ` · mise à jour en cours (${status.total ? `${fmt.format(status.done)} / ${fmt.format(status.total)}` : "…"})` : "");
+  if (changed || !document.getElementById("mosaicImg")) renderMosaic();
+}
+
+function mosaicUrl() {
+  return `/mosaic/${mosaic.set}/${mosaic.layout}.jpg?v=${encodeURIComponent(mosaic.index.generated_at)}`;
+}
+
+function renderMosaic() {
+  const body = document.getElementById("mosaicBody");
+  const set = currentSet();
+  if (set.count === 0) {
+    body.innerHTML = '<div class="empty">Aucune image dans cette catégorie.</div>';
+    return;
+  }
+  const veiled = mosaic.set === "nsfw" && !mosaic.revealed;
+  body.innerHTML = `<div class="mosaic-scroll"><div class="mosaic-wrap ${mosaic.zoom === "natural" ? "natural" : ""} ${veiled ? "veiled" : ""}" id="mosaicWrap">
+    <img id="mosaicImg" alt="Mosaïque de ${fmt.format(set.count)} images" src="${mosaicUrl()}">
+    <div id="tileHighlight"></div>
+    ${veiled ? `<div class="veil"><div>Cette mosaïque contient ${fmt.format(set.count)} images exclues par le filtre.</div>
+      <button type="button" id="reveal">Afficher</button></div>` : ""}</div></div>`;
+  const link = document.getElementById("mosaicDownload");
+  link.href = mosaicUrl();
+  link.setAttribute("download", `2chan-mosaique-${mosaic.set === "safe" ? "filtree" : "exclues"}-${mosaic.layout}.jpg`);
+
+  if (veiled) {
+    document.getElementById("reveal").addEventListener("click", () => { mosaic.revealed = true; renderMosaic(); });
+    return;
+  }
+  const wrap = document.getElementById("mosaicWrap");
+  wrap.addEventListener("mousemove", onTileHover);
+  wrap.addEventListener("mouseleave", hideTile);
+  wrap.addEventListener("click", e => { const t = tileAt(e); if (t) openLightbox(t.item); });
+}
+
+const LABELS = { drawings: "dessin", neutral: "neutre" };
+const classification = (label, score) => `${LABELS[label] || "filtrée"} · score ${score.toFixed(2)}`;
+
+function tileAt(e) {
+  const { tile } = mosaic.index;
+  const set = currentSet();
+  const img = document.getElementById("mosaicImg");
+  const rect = img.getBoundingClientRect();
+  if (!img.naturalWidth) return null;
+  const scale = img.naturalWidth / rect.width;
+  const col = Math.floor((e.clientX - rect.left) * scale / tile);
+  const row = Math.floor((e.clientY - rect.top) * scale / tile);
+  const position = row * set.cols + col;
+  if (col < 0 || col >= set.cols || row < 0 || position >= set.count) return null;
+  const size = tile / scale;
+  return { item: set.items[set.layouts[mosaic.layout][position]], left: col * size, top: row * size, size };
+}
+
+function onTileHover(e) {
+  const t = tileAt(e);
+  if (!t) return hideTile();
+  const box = document.getElementById("tileHighlight");
+  Object.assign(box.style, { display: "block", left: `${t.left}px`, top: `${t.top}px`, width: `${t.size}px`, height: `${t.size}px` });
+  const [postNumber, threadNumber, postedAt, , label, score] = t.item;
+  const tip = document.getElementById("tileTip");
+  tip.innerHTML = `<div>${dateTime(postedAt)}</div><div class="muted">No.${postNumber} · thread ${threadNumber}</div>
+    <div class="muted">${classification(label, score)}</div>`;
+  tip.style.display = "block";
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
+  const y = e.clientY + 14 + tip.offsetHeight > innerHeight ? e.clientY - tip.offsetHeight - 10 : e.clientY + 14;
+  Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
+}
+
+function hideTile() {
+  document.getElementById("tileTip").style.display = "none";
+  const box = document.getElementById("tileHighlight");
+  if (box) box.style.display = "none";
+}
+
+function openLightbox([postNumber, threadNumber, postedAt, filename, label, score]) {
+  hideTile();
+  const media = document.getElementById("lightboxMedia");
+  media.innerHTML = "";
+  const img = document.createElement("img");
+  img.src = `/images/${encodeURIComponent(filename)}`;
+  img.alt = `Image du post ${postNumber}`;
+  media.append(img);
+  document.getElementById("lightboxCaption").innerHTML =
+    `${dateTime(postedAt)} · No.${postNumber} · <a href="https://nov.2chan.net/35/res/${threadNumber}.htm" target="_blank" rel="noopener noreferrer">thread ${threadNumber}</a>`
+    + (label && score != null ? `<br>${classification(label, score)}` : "");
+  document.getElementById("lightbox").hidden = false;
+}
+
+function closeLightbox() {
+  document.getElementById("lightbox").hidden = true;
+  document.getElementById("lightboxMedia").innerHTML = "";
+}
+
+document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
+document.getElementById("lightbox").addEventListener("click", e => { if (e.target.id === "lightbox") closeLightbox(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+
+function bindMosaicSegment(id, key) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn || !mosaic.index) return;
+    el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === btn));
+    mosaic[key] = btn.dataset.value;
+    renderMosaic();
+  });
+}
+bindMosaicSegment("mosaicSet", "set");
+bindMosaicSegment("mosaicLayout", "layout");
+bindMosaicSegment("mosaicZoom", "zoom");
+
+// ---- Politics ----
+const POLITICAL = ["far_left", "left", "center", "right", "far_right"];
+const POL_NAMES = {
+  far_left: "Extrême gauche", left: "Gauche", center: "Centre",
+  right: "Droite", far_right: "Extrême droite", non_political: "Non politique",
+};
+const pol = { granularity: "week", mode: "absolute", confidence: "0", nonPolitical: false, data: [], loaded: false };
+const pct = v => `${(100 * v).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
+
+function polLabel(iso) {
+  const d = new Date(iso + "T00:00:00");
+  if (pol.granularity === "month") return d.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
+}
+
+// Name of each political line drawn just right of its last point, nudged apart so they don't overlap
+const endLabels = {
+  id: "endLabels",
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea } = chart;
+    const labels = [];
+    chart.data.datasets.forEach((ds, i) => {
+      const meta = chart.getDatasetMeta(i);
+      const last = meta.data[meta.data.length - 1];
+      if (chart.isDatasetVisible(i) && last && Number.isFinite(last.y)) labels.push({ y: last.y, text: ds.label });
+    });
+    labels.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 14);
+    // Labels pushed below the plot are moved back up, still 14px apart
+    for (let i = labels.length - 1; i >= 0; i--) {
+      labels[i].y = Math.min(labels[i].y, i === labels.length - 1 ? chartArea.bottom : labels[i + 1].y - 14);
+    }
+    ctx.save();
+    ctx.fillStyle = css("--text-2");
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.textBaseline = "middle";
+    labels.forEach(l => ctx.fillText(l.text, chartArea.right + 8, l.y));
+    ctx.restore();
+  },
+};
+
+function polOptions(yFormat) {
+  const opts = baseOptions();
+  opts.layout = { padding: { right: 110 } };
+  opts.interaction = { mode: "index", intersect: false };
+  opts.scales.y.beginAtZero = true;
+  opts.scales.y.ticks.callback = yFormat;
+  opts.scales.x.ticks.maxRotation = 0;
+  opts.scales.x.ticks.autoSkipPadding = 16;
+  opts.plugins.legend = {
+    display: true, position: "top", align: "start",
+    labels: { color: css("--text-2"), boxWidth: 12, boxHeight: 2, font: { size: 12 } },
+  };
+  opts.plugins.tooltip.displayColors = true;
+  return opts;
+}
+
+function lineDataset(label, values, color, dashed = false) {
+  return {
+    label, data: values, borderColor: color, backgroundColor: color, borderWidth: 2,
+    borderDash: dashed ? [5, 4] : [], pointRadius: 0, pointHoverRadius: 4,
+    pointHoverBorderWidth: 2, pointHoverBorderColor: css("--surface"), tension: 0.25, spanGaps: true,
+  };
+}
+
+function renderPolitics() {
+  const rows = pol.data;
+  const share = pol.mode === "share";
+  const labels = pol.nonPolitical ? [...POLITICAL, "non_political"] : POLITICAL;
+  const unit = { day: "jour", week: "semaine", month: "mois" }[pol.granularity];
+  document.getElementById("polTitle").textContent =
+    `${share ? "Proportion des orientations" : "Orientation politique"} par ${unit}`;
+
+  const political = r => POLITICAL.reduce((sum, l) => sum + r[l], 0);
+  // Proportion: share of political posts, or of all text posts when non-political is shown
+  const denominator = r => political(r) + (pol.nonPolitical ? r.non_political : 0);
+  const value = (r, l) => share ? (denominator(r) ? r[l] / denominator(r) : null) : r[l];
+
+  const opts = polOptions(share ? (v => `${Math.round(100 * v)} %`)
+                                : (v => Intl.NumberFormat("fr-FR", { notation: "compact" }).format(v)));
+  if (share) opts.scales.y.max = pol.nonPolitical ? undefined : 1;
+  opts.plugins.tooltip.callbacks = {
+    title: items => (pol.granularity === "week" ? "Semaine du " : "") + polLabel(rows[items[0].dataIndex].period),
+    label: item => {
+      const r = rows[item.dataIndex], l = labels[item.datasetIndex];
+      const d = denominator(r);
+      return `${POL_NAMES[l]} : ${fmt.format(r[l])} posts${d ? ` (${pct(r[l] / d)})` : ""}`;
+    },
+    footer: items => {
+      const r = rows[items[0].dataIndex];
+      return `${fmt.format(denominator(r))} posts ${pol.nonPolitical ? "classés" : "politiques"} · ${fmt.format(r.total_posts)} posts au total`;
+    },
+  };
+
+  charts.pol?.destroy();
+  charts.pol = new Chart(document.getElementById("polChart"), {
+    type: "line",
+    data: {
+      labels: rows.map(r => polLabel(r.period)),
+      datasets: labels.map(l => lineDataset(POL_NAMES[l], rows.map(r => value(r, l)), css(`--pol-${l}`), l === "non_political")),
+    },
+    options: opts,
+    plugins: [endLabels],
+  });
+
+  const shareOpts = polOptions(v => `${Math.round(100 * v)} %`);
+  shareOpts.layout = {};
+  shareOpts.plugins.legend.display = false;
+  shareOpts.plugins.tooltip.displayColors = false;
+  shareOpts.plugins.tooltip.callbacks = {
+    title: items => (pol.granularity === "week" ? "Semaine du " : "") + polLabel(rows[items[0].dataIndex].period),
+    label: item => {
+      const r = rows[item.dataIndex];
+      return `${pct(item.raw)} politiques (${fmt.format(political(r))} / ${fmt.format(political(r) + r.non_political)})`;
+    },
+  };
+  charts.polShare?.destroy();
+  charts.polShare = new Chart(document.getElementById("polShareChart"), {
+    type: "line",
+    data: {
+      labels: rows.map(r => polLabel(r.period)),
+      datasets: [lineDataset("Part politique", rows.map(r => {
+        const all = political(r) + r.non_political;
+        return all ? political(r) / all : null;
+      }), css("--series-1"))],
+    },
+    options: shareOpts,
+  });
+
+  // KPIs
+  const sum = key => rows.reduce((s, r) => s + r[key], 0);
+  const total = sum("total_posts"), processed = sum("processed");
+  document.getElementById("kpiPolCov").textContent = total ? `${Math.floor(100 * processed / total)} %` : "–";
+  document.getElementById("kpiPolCovSub").textContent = `${fmt.format(processed)} / ${fmt.format(total)} (dont ${fmt.format(processed - sum("classified"))} sans texte)`;
+  const polTotal = POLITICAL.reduce((s, l) => s + sum(l), 0), nonPol = sum("non_political");
+  document.getElementById("kpiPolShare").textContent = polTotal + nonPol ? pct(polTotal / (polTotal + nonPol)) : "–";
+  document.getElementById("kpiPolShareSub").textContent = `${fmt.format(polTotal)} posts politiques depuis le 1er janvier`;
+  note();
+}
+
+function note() {
+  const conf = Number(pol.confidence);
+  document.getElementById("polNote").textContent =
+    "Classification de chaque post par TypeSafe AI (modèle Jev). "
+    + (pol.mode === "share"
+      ? `Part de chaque orientation parmi les posts ${pol.nonPolitical ? "classés (non politiques inclus)" : "politiques"} de la période. `
+      : "Nombre de posts par orientation. ")
+    + (conf ? `Seuls les posts classés avec une confiance ≥ ${String(conf).replace(".", ",")} sont comptés.` : "Toutes confiances confondues.");
+}
+
+async function loadPoliticsKpiTop() {
+  // Dominant political class over the last 30 days, from daily data
+  const days = await api(`/api/politics-over-time?granularity=day&min_confidence=${pol.confidence}`);
+  const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  const recent = days.filter(r => r.period >= since);
+  const totals = POLITICAL.map(l => [l, recent.reduce((s, r) => s + r[l], 0)]);
+  const all = totals.reduce((s, [, n]) => s + n, 0);
+  const [top, n] = totals.reduce((a, b) => b[1] > a[1] ? b : a);
+  document.getElementById("kpiPolTop").textContent = all ? POL_NAMES[top] : "–";
+  document.getElementById("kpiPolTopSub").textContent = all ? `${pct(n / all)} des ${fmt.format(all)} posts politiques` : "";
+}
+
+async function loadPolitics() {
+  pol.data = await api(`/api/politics-over-time?granularity=${pol.granularity}&min_confidence=${pol.confidence}`);
+  renderPolitics();
+  loadPoliticsKpiTop();
+}
+
+function bindPolSegment(id, key, onChange) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === btn));
+    pol[key] = btn.dataset.value;
+    onChange();
+  });
+}
+bindPolSegment("polGranularity", "granularity", loadPolitics);
+bindPolSegment("polMode", "mode", renderPolitics);
+bindPolSegment("polConfidence", "confidence", loadPolitics);
+document.getElementById("polNonPolitical").addEventListener("change", e => {
+  pol.nonPolitical = e.target.checked;
+  renderPolitics();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (pol.loaded) renderPolitics(); });
+
+// ---- Posts ----
+const POST_PAGE = 50;
+const posts = { offset: 0, loaded: false, request: 0, person: null };
+
+function filterPostsByPerson(person) {
+  posts.person = person;
+  const chip = document.getElementById("postPerson");
+  chip.textContent = `${person.display_name} ✕`;
+  chip.hidden = false;
+  if (posts.loaded) loadPosts();
+  location.hash = "#posts";
+}
+const escapeHtml = s => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const QUOTE = /^\s*[>＞]/;
+
+function postBody(content, targets = {}) {
+  // Quoted lines (>) in green, as on futaba; linked to their source post when known
+  return (content || "").split("\n").map((line, i) => {
+    if (!QUOTE.test(line)) return escapeHtml(line);
+    const target = targets[i] ? ` data-target="${targets[i]}"` : "";
+    return `<span class="quote"${target}>${escapeHtml(line)}</span>`;
+  }).join("\n");
+}
+
+function postBadge(p) {
+  if (!p.label) return '<span class="badge plain">Non classé</span>';
+  if (p.label === "empty") return '<span class="badge plain">Sans texte</span>';
+  const conf = p.confidence == null ? "" : ` · ${p.confidence.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}`;
+  // The non-political grey is too light for white text
+  if (p.label === "non_political") return `<span class="badge plain">${POL_NAMES.non_political}${conf}</span>`;
+  return `<span class="badge" style="--pol: var(--pol-${p.label})" title="Confiance${conf.replace(" ·", "")}">${POL_NAMES[p.label] || escapeHtml(p.label)}${conf}</span>`;
+}
+
+function postProbs(p) {
+  const probs = p.probabilities || {};
+  const order = [...POLITICAL, "non_political"].filter(l => probs[l] > 0);
+  if (!order.length) return "";
+  const title = order.map(l => `${POL_NAMES[l]} ${pct(probs[l])}`).join(" · ");
+  return `<div class="probs" title="${title}">${order.map(l =>
+    `<div style="width:${100 * probs[l]}%;background:var(--pol-${l})"></div>`).join("")}</div>`;
+}
+
+function renderPost(p, { index, targets } = {}) {
+  const inThread = index !== undefined;
+  const el = document.createElement("article");
+  el.className = "post";
+  el.id = inThread ? `p${p.post_number}` : "";
+  el.dataset.label = p.label || "";
+  if (POLITICAL.includes(p.label)) el.style.setProperty("--pol", `var(--pol-${p.label})`);
+  const image = p.image ? `<button type="button" class="img-link">Image${p.image_label ? ` · ${LABELS[p.image_label] || escapeHtml(p.image_label)}` : ""}</button>` : "";
+  el.innerHTML = `<div class="post-head">
+      <span>${p.posted_at ? dateTime(p.posted_at) : "date inconnue"}</span>
+      ${inThread
+        ? `<a class="num" href="#thread/${p.thread_number}/p${p.post_number}">${index}</a><span>No.${p.post_number}</span>`
+        : `<span>No.${p.post_number}</span>
+           <a href="#thread/${p.thread_number}/p${p.post_number}" title="Lire le post dans son thread">${escapeHtml(p.subject || "thread")} →</a>`}
+      ${p.is_op ? '<span class="op">OP</span>' : ""}
+      ${image}
+      ${p.content?.trim() ? '<button type="button" class="tr-btn">Traduire</button>' : ""}
+      ${postBadge(p)}
+    </div>
+    <div class="post-body">${postBody(p.content, targets)}</div>
+    ${inThread && !POLITICAL.includes(p.label) ? "" : postProbs(p)}`;
+  el.querySelector(".img-link")?.addEventListener("click", () =>
+    openLightbox([p.post_number, p.thread_number, p.posted_at, p.image, p.image_label, p.nsfw_score]));
+  el.querySelector(".tr-btn")?.addEventListener("click", () => {
+    const box = el.querySelector(".post-translation");
+    if (box && !box.hidden) { box.hidden = true; el.querySelector(".tr-btn").textContent = "Traduire"; }
+    else showTranslation(el, p.post_number);
+  });
+  return el;
+}
+
+// Pending or done translations, so that a post is only requested once per page load
+const translations = {};
+
+function translation(path) {
+  return translations[path] ??= api(path, { method: "POST" }).then(r => r.translation)
+    .catch(e => { delete translations[path]; throw e; });
+}
+
+const translationError = e => e.message.endsWith(": 503") ? "Traduction non configurée." : "Échec de la traduction.";
+
+async function showTranslation(el, postNumber) {
+  const btn = el.querySelector(".tr-btn");
+  let box = el.querySelector(".post-translation");
+  if (!box) {
+    box = document.createElement("div");
+    box.className = "post-translation";
+    el.querySelector(".post-body").after(box);
+  }
+  box.hidden = false;
+  btn.textContent = "Masquer la traduction";
+  if (box.dataset.done) return;
+  box.classList.remove("error");
+  box.textContent = "Traduction…";
+  try {
+    box.innerHTML = postBody(await translation(`/api/posts/${postNumber}/translation`));
+    box.dataset.done = "1";
+  } catch (e) {
+    box.classList.add("error");
+    box.textContent = translationError(e);
+  }
+}
+
+async function loadPosts(reset = true) {
+  if (reset) posts.offset = 0;
+  const id = ++posts.request;
+  const params = new URLSearchParams({
+    label: document.getElementById("postLabel").value,
+    min_confidence: document.getElementById("postConfidence").value,
+    sort: document.getElementById("postSort").value,
+    date_from: document.getElementById("postFrom").value,
+    date_to: document.getElementById("postTo").value,
+    q: document.getElementById("postQuery").value.trim(),
+    person: posts.person?.id ?? "",
+    offset: posts.offset, limit: POST_PAGE,
+  });
+  for (const [k, v] of [...params]) if (v === "") params.delete(k);
+  const list = document.getElementById("postList");
+  const more = document.getElementById("postMore");
+  list.style.opacity = reset ? 0.5 : 1;
+  more.disabled = true;
+  try {
+    const data = await api(`/api/posts?${params}`);
+    if (id !== posts.request) return; // a newer request superseded this one
+    if (reset) list.innerHTML = "";
+    data.items.forEach(p => list.append(renderPost(p)));
+    if (!list.children.length) list.innerHTML = '<div class="empty">Aucun post ne correspond à ces filtres.</div>';
+    posts.offset += data.items.length;
+    more.hidden = !data.has_more;
+  } finally {
+    if (id === posts.request) { list.style.opacity = 1; more.disabled = false; }
+  }
+}
+
+// Search box, date range with presets and selects of a filter form
+function bindFilters(prefix, onChange) {
+  const presets = document.querySelectorAll(`#${prefix}Preset button`);
+  let debounce = null;
+  document.getElementById(`${prefix}Filters`).addEventListener("submit", e => { e.preventDefault(); onChange(); });
+  document.getElementById(`${prefix}Filters`).addEventListener("change", e => {
+    // A hand-picked date no longer matches a preset
+    if (e.target.type === "date") presets.forEach(b => b.setAttribute("aria-pressed", false));
+    if (e.target.tagName === "SELECT" || e.target.type === "date") onChange();
+  });
+  document.getElementById(`${prefix}Preset`).addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    presets.forEach(b => b.setAttribute("aria-pressed", b === btn));
+    // Dates in Japan time, like posted_at
+    const jstDay = offset => new Date(Date.now() + 9 * 36e5 - offset * 864e5).toISOString().slice(0, 10);
+    const days = Number(btn.dataset.days);
+    document.getElementById(`${prefix}From`).value = days ? jstDay(days - 1) : "";
+    document.getElementById(`${prefix}To`).value = "";
+    onChange();
+  });
+  document.getElementById(`${prefix}Query`).addEventListener("input", () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(onChange, 300);
+  });
+}
+bindFilters("post", loadPosts);
+document.getElementById("postPerson").addEventListener("click", e => {
+  posts.person = null;
+  e.currentTarget.hidden = true;
+  loadPosts();
+});
+document.getElementById("postMore").addEventListener("click", () => loadPosts(false));
+
+// ---- Threads ----
+const threads = { offset: 0, loaded: false, request: 0, open: null, listScroll: 0 };
+const BAR_LABELS = [...POLITICAL, "non_political"];
+const shortDate = iso => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+
+function labelBar(counts) {
+  const total = BAR_LABELS.reduce((s, l) => s + (counts[l] || 0), 0);
+  if (!total) return "";
+  const title = BAR_LABELS.filter(l => counts[l]).map(l => `${POL_NAMES[l]} ${fmt.format(counts[l])}`).join(" · ");
+  return `<div class="probs" title="${title}">${BAR_LABELS.filter(l => counts[l]).map(l =>
+    `<div style="width:${100 * counts[l] / total}%;background:var(--pol-${l})"></div>`).join("")}</div>`;
+}
+
+function renderThreadItem(t) {
+  const political = POLITICAL.reduce((s, l) => s + t.labels[l], 0);
+  const a = document.createElement("a");
+  a.className = "thread-item";
+  a.href = `#thread/${t.thread_number}`;
+  a.innerHTML = `<h3>${escapeHtml(t.subject || "Sans titre")}</h3>
+    <div class="meta">
+      <span>${shortDate(t.first_post)}${shortDate(t.first_post) === shortDate(t.last_post) ? "" : ` → ${shortDate(t.last_post)}`}</span>
+      <span>${fmt.format(t.posts)} posts</span>
+      ${t.images ? `<span>${fmt.format(t.images)} images</span>` : ""}
+      <span>${political ? `${fmt.format(political)} politiques (${pct(t.political_share)})` : "aucun post politique"}</span>
+      ${t.has_op ? "" : "<span>début du thread manquant</span>"}
+    </div>
+    <p class="excerpt">${escapeHtml(t.first_content)}</p>
+    ${labelBar(t.labels)}`;
+  return a;
+}
+
+async function loadThreads(reset = true) {
+  if (reset) threads.offset = 0;
+  const id = ++threads.request;
+  const params = new URLSearchParams({
+    q: document.getElementById("threadQuery").value.trim(),
+    date_from: document.getElementById("threadFrom").value,
+    date_to: document.getElementById("threadTo").value,
+    sort: document.getElementById("threadSort").value,
+    offset: threads.offset, limit: 30,
+  });
+  for (const [k, v] of [...params]) if (v === "") params.delete(k);
+  const list = document.getElementById("threadList");
+  const more = document.getElementById("threadMore");
+  list.style.opacity = reset ? 0.5 : 1;
+  more.disabled = true;
+  try {
+    const data = await api(`/api/threads?${params}`);
+    if (id !== threads.request) return; // a newer request superseded this one
+    if (reset) list.innerHTML = "";
+    data.items.forEach(t => list.append(renderThreadItem(t)));
+    if (!list.children.length) list.innerHTML = '<div class="empty">Aucun thread ne correspond à ces filtres.</div>';
+    threads.offset += data.items.length;
+    more.hidden = !data.has_more;
+  } finally {
+    if (id === threads.request) { list.style.opacity = 1; more.disabled = false; }
+  }
+}
+
+// For each quoted line, the latest earlier post it comes from: a "No.123" reference,
+// or a post containing the quoted text in its own (unquoted) lines
+function quoteTargets(posts) {
+  const byNumber = new Set(posts.map(p => p.post_number));
+  const ownText = posts.map(p => (p.content || "").split("\n").filter(l => !QUOTE.test(l)).join("\n"));
+  return posts.map((p, i) => {
+    const targets = {};
+    (p.content || "").split("\n").forEach((line, n) => {
+      if (!QUOTE.test(line)) return;
+      const quoted = line.replace(/^\s*[>＞]+\s*/, "").trim();
+      const ref = quoted.match(/^No\.(\d+)$/);
+      if (ref) {
+        if (byNumber.has(Number(ref[1]))) targets[n] = ref[1];
+        return;
+      }
+      if (quoted.length < 2) return;
+      for (let j = i - 1; j >= 0; j--) {
+        if (ownText[j].includes(quoted)) { targets[n] = posts[j].post_number; break; }
+      }
+    });
+    return targets;
+  });
+}
+
+async function openThread(number, postNumber) {
+  const view = document.getElementById("threadView");
+  const container = document.getElementById("threadPosts");
+  if (threads.open?.thread_number !== number) {
+    document.getElementById("threadTitle").textContent = "Chargement…";
+    document.getElementById("threadTitleTr").hidden = true;
+    const trButton = document.getElementById("threadTranslate");
+    trButton.disabled = false;
+    trButton.textContent = "Traduire le thread";
+    document.getElementById("threadMeta").innerHTML = "";
+    document.getElementById("threadBar").innerHTML = "";
+    container.innerHTML = "";
+    let data;
+    try {
+      data = await api(`/api/threads/${number}`);
+    } catch (e) {
+      document.getElementById("threadTitle").textContent = "Thread introuvable";
+      threads.open = null;
+      return;
+    }
+    if (!location.hash.startsWith(`#thread/${number}`)) return; // navigated away meanwhile
+    threads.open = data;
+    const counts = {};
+    data.posts.forEach(p => { if (p.label) counts[p.label] = (counts[p.label] || 0) + 1; });
+    const political = POLITICAL.reduce((s, l) => s + (counts[l] || 0), 0);
+    const first = data.posts[0], last = data.posts[data.posts.length - 1];
+    document.getElementById("threadTitle").textContent = data.subject || "Sans titre";
+    document.getElementById("threadMeta").innerHTML = `
+      ${first ? `<span>${dateTime(first.posted_at)} → ${dateTime(last.posted_at)}</span>` : ""}
+      <span>${fmt.format(data.posts.length)} posts</span>
+      <span>${fmt.format(political)} politiques</span>
+      ${first && !first.is_op ? "<span>début du thread manquant</span>" : ""}
+      <a href="https://nov.2chan.net/35/res/${data.thread_number}.htm" target="_blank" rel="noopener noreferrer">original sur 2chan (peut avoir expiré)</a>`;
+    document.getElementById("threadBar").innerHTML = labelBar(counts);
+    document.getElementById("threadLegend").innerHTML = BAR_LABELS.filter(l => counts[l])
+      .map(l => `<span style="--c: var(--pol-${l})">${POL_NAMES[l]} ${fmt.format(counts[l])}</span>`).join("");
+    const targets = quoteTargets(data.posts);
+    const frag = document.createDocumentFragment();
+    data.posts.forEach((p, i) => frag.append(renderPost(p, { index: i + 1, targets: targets[i] })));
+    container.append(frag);
+    applyDim();
+  }
+  if (postNumber) jumpToPost(postNumber);
+  else scrollTo(0, view.offsetTop - 16);
+}
+
+function jumpToPost(postNumber) {
+  const el = document.getElementById(`p${postNumber}`);
+  if (!el) return;
+  el.scrollIntoView({ block: "center" });
+  el.classList.remove("flash");
+  void el.offsetWidth; // restart the animation
+  el.classList.add("flash");
+}
+
+function applyDim() {
+  const dim = document.getElementById("threadDim").checked;
+  document.querySelectorAll("#threadPosts .post").forEach(el =>
+    el.classList.toggle("dim", dim && !POLITICAL.includes(el.dataset.label)));
+}
+
+function showQuoteTip(e) {
+  const span = e.target.closest(".quote[data-target]");
+  const tip = document.getElementById("quoteTip");
+  const source = span && threads.open?.posts.find(p => p.post_number === Number(span.dataset.target));
+  if (!source) { tip.style.display = "none"; return; }
+  tip.innerHTML = `<div class="meta"><span>No.${source.post_number}</span><span>${dateTime(source.posted_at)}</span>${postBadge(source)}</div>${postBody(source.content)}`;
+  tip.style.display = "block";
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
+  const y = e.clientY + 14 + tip.offsetHeight > innerHeight ? Math.max(8, e.clientY - tip.offsetHeight - 10) : e.clientY + 14;
+  Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
+}
+
+const threadPosts = document.getElementById("threadPosts");
+threadPosts.addEventListener("mousemove", showQuoteTip);
+threadPosts.addEventListener("mouseleave", () => { document.getElementById("quoteTip").style.display = "none"; });
+threadPosts.addEventListener("click", e => {
+  const span = e.target.closest(".quote[data-target]");
+  if (!span) return;
+  document.getElementById("quoteTip").style.display = "none";
+  history.pushState(null, "", `#thread/${threads.open.thread_number}/p${span.dataset.target}`);
+  jumpToPost(span.dataset.target);
+});
+document.getElementById("threadDim").addEventListener("change", applyDim);
+
+async function translateThread() {
+  const data = threads.open;
+  if (!data) return;
+  const btn = document.getElementById("threadTranslate");
+  const title = document.getElementById("threadTitleTr");
+  btn.disabled = true;
+  if (data.subject) {
+    title.hidden = false;
+    title.classList.remove("error");
+    title.textContent = "Traduction du titre…";
+    translation(`/api/threads/${data.thread_number}/translation`)
+      .then(t => { if (threads.open === data) title.textContent = t; })
+      .catch(e => { if (threads.open === data) { title.classList.add("error"); title.textContent = translationError(e); } });
+  }
+  const queue = data.posts.filter(p => p.content?.trim());
+  const total = queue.length;
+  let done = 0;
+  btn.textContent = `Traduction… 0/${total}`;
+  // A few requests at a time, in reading order
+  const worker = async () => {
+    while (queue.length && threads.open === data) {
+      const p = queue.shift();
+      const el = document.getElementById(`p${p.post_number}`);
+      if (el) await showTranslation(el, p.post_number);
+      if (threads.open === data) btn.textContent = `Traduction… ${++done}/${total}`;
+    }
+  };
+  await Promise.all(Array.from({ length: 4 }, worker));
+  // Clicking again retries the posts that failed (the others come from the cache)
+  if (threads.open === data) { btn.disabled = false; btn.textContent = "Thread traduit"; }
+}
+
+document.getElementById("threadTranslate").addEventListener("click", translateThread);
+bindFilters("thread", loadThreads);
+document.getElementById("threadMore").addEventListener("click", () => loadThreads(false));
+
+// ---- Tabs ----
+let statsLoaded = false;
+function showTab() {
+  const route = location.hash.match(/^#thread\/(\d+)(?:\/p(\d+))?$/);
+  const tab = route ? "threads"
+    : { "#mosaic": "mosaic", "#politics": "politics", "#threads": "threads", "#posts": "posts" }[location.hash] || "stats";
+  const listView = document.getElementById("threadListView");
+  // Keep the list's scroll position to come back to it from a thread
+  if (!listView.hidden && !document.getElementById("tab-threads").hidden) threads.listScroll = scrollY;
+  document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-selected", a.dataset.tab === tab));
+  for (const name of ["stats", "mosaic", "politics", "threads", "posts"]) document.getElementById(`tab-${name}`).hidden = tab !== name;
+  if (tab !== "mosaic") clearTimeout(mosaic.pollTimer);
+  if (tab === "mosaic") {
+    loadMosaic();
+  } else if (tab === "politics") {
+    if (!pol.loaded) { pol.loaded = true; loadPolitics(); }
+  } else if (tab === "threads") {
+    listView.hidden = !!route;
+    document.getElementById("threadView").hidden = !route;
+    if (route) {
+      openThread(Number(route[1]), route[2] && Number(route[2]));
+    } else {
+      if (!threads.loaded) { threads.loaded = true; loadThreads(); }
+      scrollTo(0, threads.listScroll);
+    }
+  } else if (tab === "posts") {
+    if (!posts.loaded) { posts.loaded = true; loadPosts(); }
+  } else if (!statsLoaded) {
+    statsLoaded = true; loadSummary(); loadTime(); loadNgrams(); loadPeople(); loadPeopleTime();
+  }
+}
+addEventListener("hashchange", showTab);
+showTab();
 </script>
 </body>
 </html>

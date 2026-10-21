@@ -28,7 +28,6 @@ services:
     ports:
       - "5432:5432"
 
-
   dashboard:
     build:
       context: .
@@ -41,9 +40,18 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:?DASHBOARD_PASSWORD must be set in .env}
       - DASHBOARD_SESSION_SECRET=${DASHBOARD_SESSION_SECRET}
+      - JEV_KEY=${JEV_KEY}
+      - OPENROUTER_KEY=${OPENROUTER_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+    volumes:
+      - ./images:/srv/images:ro
+      - dashboard_cache:/srv/cache
     depends_on:
       - db
     # Only reachable from the host: exposed publicly through the Cloudflare tunnel
     ports:
       - "127.0.0.1:8090:8000"
     restart: unless-stopped
+
+volumes:
+  dashboard_cache:
